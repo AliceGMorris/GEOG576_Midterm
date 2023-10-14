@@ -1,1 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>GEOG 576 Midterm Project</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
 
+  <link rel="stylesheet" href="https://js.arcgis.com/4.25/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.25/"></script>
+
+  <script>
+    require([
+    "esri/config", 
+    "esri/Map", 
+    "esri/views/MapView",
+    "esri/widgets/Locate",
+    "esri/widgets/Search",
+    "esri/widgets/BasemapGallery",
+    "esri/widgets/Expand",
+    "esri/layers/FeatureLayer",
+    "esri/widgets/Legend",
+    "esri/widgets/Editor",
+    "esri/renderers/UniqueValueRenderer",
+    "esri/widgets/LayerList",
+    "esri/rest/support/Query",
+    "esri/layers/GraphicsLayer",
+    "esri/Graphic",
+    "esri/renderers/Renderer"
+    ], function(
+    esriConfig, 
+    Map, 
+    MapView,
+    Locate,
+    Search,
+    BasemapGallery,
+    Expand,
+    FeatureLayer,
+    Legend,
+    Editor,
+    UniqueValueRenderer,
+    LayerList,
+    Query,
+    GraphicsLayer,
+    Graphic,
+    Renderer
+    ) {
+      //ApiKey and set up map
+      esriConfig.apiKey = "AAPK14ceecbe50e741a8abf64505c88e0ae2hbmy5FKYTlNO8r9NgEY1n0spf5bQg4X-Ws2mCUoXrQMECei8f3MgQr4g6cglMzjO";
+      const map = new Map({ 
+        basemap: "arcgis-topographic" // Basemap layer service
+      });
+      const view = new MapView({
+        map: map,
+        center: [-98.5795, 39.828175], // Longitude, latitude
+        zoom: 5, // Zoom level
+        container: "viewDiv" // Div element
+      });
+      
+      //Locate widget
+      let locateWidget = new Locate({
+        view: view
+      });
+      view.ui.add(locateWidget, "top-left");
+      const searchWidget = new Search({
+        view: view
+      });
+
+      //Search widget
+      view.ui.add(searchWidget, {
+        position: "top-left",
+        index: 1
+      });
+
+      //Basemap gallery
+      const basemapGallery = new BasemapGallery({
+        view: view,
+        container: document.createElement("BasemapGallerydiv")
+      });
+      const bgExpand = new Expand({
+        view: view,
+        content: basemapGallery
+      });
+      view.ui.add(bgExpand, "top-left");
+
+      //Government Land popup
+      const popupusaGovernmentLand = {
+        "title": "{Loc_Nm}",
+        "content": "<b>Owner:</b> {Loc_Own}<br><b>Manager:</b> {Loc_Mang}<br><b>Designation Type:</b> {Des_Tp}"
+      };
+      //Government Land feature layer
+      const usaGovernmentLandLayer = new FeatureLayer({
+        url: "https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Manager_Name/FeatureServer",
+        outFields: ["Loc_Nm", "Loc_Own", "Loc_Mang", "Des_Tp"],
+        popupTemplate: popupusaGovernmentLand,
+        opacity: 0.25,
+        title: "Protected Areas Database of the United States (by the USGS)"
+      });
+      map.add(usaGovernmentLandLayer);
+
+      //Trail popup
+      const trailPop = {
+        "title": "{TrailName}",
+        "content": "<b>Trail Type:</b> {TrailType}<br><b>Notes:</b> {Notes}"
+      };
+
+      //Trail renderer based on attribute trailtype
+      let trailsRender = {
+        type: "unique-value",  
+        field: "TrailType",
+        uniqueValueInfos: [{
+          value: "Paved",
+          symbol: {
+            "type": "picture-marker",
+            "url": "https://raw.githubusercontent.com/AliceGMorris/GEOG576_Midterm/main/Hiking_Blue.png",
+            "width": "24px",
+            "height": "24px"
+          }
+        }, {
+          value: "Dirt",
+          symbol: {
+            "type": "picture-marker",
+            "url": "https://raw.githubusercontent.com/AliceGMorris/GEOG576_Midterm/main/Hiking_Brown.png",
+            "width": "24px",
+            "height": "24px"
+          }
+        }, {
+          value: "Gravel/Rock",
+          symbol: {
+            "type": "picture-marker",
+            "url": "https://raw.githubusercontent.com/AliceGMorris/GEOG576_Midterm/main/Hiking_Grey.png",
+            "width": "24px",
+            "height": "24px"
+          }
+        }, {
+          value: "Other",
+          symbol: {
+            "type": "picture-marker",
+            "url": "https://raw.githubusercontent.com/AliceGMorris/GEOG576_Midterm/main/Hiking_Purple.png",
+            "width": "24px",
+            "height": "24px"
+          }
+        }]
+      };
+
+      //Trail feature class
+      const trails = new FeatureLayer({
+        url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/GEOG576_Midterm/FeatureServer",
+        outFields: ["TrailName", "TrailType", "Notes"],
+        popupTemplate: trailPop,
+        renderer: trailsRender,
+        title: "Trailheads"
+      });
+      map.add(trails);
+
+      const trailInfos = {
+        layer: trails
+      }
+
+      //Setup editor for trail feature class
+      const editor = new Editor({
+        view: view,
+        layerInfos: [trailInfos],
+        container: document.createElement("editor")
+      }); 
+      const edExpand = new Expand({
+        view: view,
+        content: editor
+      });
+      view.ui.add(edExpand, "top-right");
+
+      //Layerlist
+      let layerList = new LayerList({
+        view: view,
+        container: document.createElement("layerList")
+      });
+      const listExpand = new Expand({
+        view: view,
+        content: layerList
+      });
+      view.ui.add(listExpand, "bottom-left");
+
+      view.ui.add("optionsDiv", "bottom-left");
+
+      let query = trails.createQuery();
+
+      var resultsLayer = new GraphicsLayer({
+        title: "Query"
+      });
+
+      // when query type changes, set appropriate values
+      const queryOpts = document.getElementById("query-type");
+
+      queryOpts.addEventListener("change", () => {
+        switch (queryOpts.value) {
+          // values set based on trail type
+          case "Paved":
+            query.where = "TrailType = 'Paved'";
+            query.outFields = ["TrailName", "TrailType", "Notes"];
+            query.returnGeometry = true;
+            icon = "https://raw.githubusercontent.com/AliceGMorris/GEOG576_Midterm/main/Hiking_Blue.png";
+            queryFeat().then(updateMap);
+            break
+          case "Dirt":
+            query.where = "TrailType = 'Dirt'";
+            query.outFields = ["TrailName", "TrailType", "Notes"];
+            query.returnGeometry = true;
+            icon = "https://raw.githubusercontent.com/AliceGMorris/GEOG576_Midterm/main/Hiking_Brown.png";
+            queryFeat().then(updateMap);
+            break;
+          case "Gravel/Rock":
+            query.where = "TrailType = 'Gravel/Rock'";
+            query.outFields = ["TrailName", "TrailType", "Notes"];
+            query.returnGeometry = true;
+            icon = "https://raw.githubusercontent.com/AliceGMorris/GEOG576_Midterm/main/Hiking_Grey.png";
+            queryFeat().then(updateMap);
+            break
+          case "Other":
+            query.where = "TrailType = 'Other'";
+            query.outFields = ["TrailName", "TrailType", "Notes"];
+            query.returnGeometry = true;
+            icon = "https://raw.githubusercontent.com/AliceGMorris/GEOG576_Midterm/main/Hiking_Purple.png";
+            queryFeat().then(updateMap);
+            break
+          default:
+            map.remove(resultsLayer);
+            map.add(trails);   
+        }
+      });
+
+      //Query the map
+      function queryFeat() {
+        return trails.queryFeatures(query)
+      };
+
+      //Update the map based on the query
+      function updateMap(response) {
+        resultsLayer.removeAll();
+        var features = response.features.map(function(graphic) {
+          graphic.popupTemplate = trailPop;
+          graphic.symbol = {
+            "type": "picture-marker",
+            "url": icon,
+            "width": "24px",
+            "height": "24px"
+          };
+          return graphic;
+        });
+        map.remove(trails);
+        var features = response.features;
+        resultsLayer.addMany(features);
+        map.addMany([resultsLayer]);
+      };
+
+      //Legend and its expand container
+      let legend = new Legend({
+        view: view,
+        container: document.createElement("legend")
+      });
+      const lgExpand = new Expand({
+        view: view,
+        content: legend
+      });
+      view.ui.add(lgExpand, "bottom-right");
+    }); 
+  </script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0; 
+      margin: 0; 
+      height: 100%; 
+      width: 100%; 
+    }
+    #optionsDiv {
+        background-color: white;
+        color: black;
+        padding: 6px;
+        max-width: 400px;
+      }
+  </style>
+</head>
+<body>
+  <div id="viewDiv"></div>
+  <div id="optionsDiv" class="esri-widget">
+    <p>Select a trail type.</p>
+    <select id="query-type" class="esri-widget">
+      <option value="all">All Trails</option>
+      <option value="Paved">Paved Trails</option>
+      <option value="Dirt">Dirt Trails</option>
+      <option value="Gravel/Rock">Gravel/Rock Trails</option>
+      <option value="Other">Other Trail Types</option>
+</body>
+</html>
