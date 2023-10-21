@@ -51,8 +51,8 @@
       });
       const view = new MapView({
         map: map,
-        center: [-98.5795, 39.828175], // Longitude, latitude
-        zoom: 5, // Zoom level
+        center: [-102.40351, 43.855059], // Longitude, latitude
+        zoom: 7, // Zoom level
         container: "viewDiv" // Div element
       });
       
@@ -61,15 +61,27 @@
         view: view
       });
       view.ui.add(locateWidget, "top-left");
-      const searchWidget = new Search({
-        view: view
-      });
 
       //Search widget
-      view.ui.add(searchWidget, {
+      const searchWidget = new Search({
+        view: view,
+        suggestionsEnabled: true,
+        maxSuggestions: 3
+      });
+
+      //expand the search widget
+      const searchExpand = new Expand ({
+        view: view,
+        content: searchWidget,
+        expandIconClass: "esri-icon-search",
+        expandTooltip: "Search",
+        expanded: false
+      })
+      //add the search widget to the top left corner of the view
+      view.ui.add(searchExpand, {
         position: "top-left",
         index: 1
-      });
+      })
 
       //Basemap gallery
       const basemapGallery = new BasemapGallery({
@@ -184,7 +196,7 @@
       let query = trails.createQuery();
 
       var resultsLayer = new GraphicsLayer({
-        title: "Query"
+        title: ""
       });
 
       // when query type changes, set appropriate values
@@ -194,6 +206,7 @@
         switch (queryOpts.value) {
           // values set based on trail type
           case "Paved":
+            resultsLayer.title = "Paved Trails";
             query.where = "TrailType = 'Paved'";
             query.outFields = ["TrailName", "TrailType", "Notes"];
             query.returnGeometry = true;
@@ -201,6 +214,7 @@
             queryFeat().then(updateMap);
             break
           case "Dirt":
+            resultsLayer.title = "Dirt Trails";
             query.where = "TrailType = 'Dirt'";
             query.outFields = ["TrailName", "TrailType", "Notes"];
             query.returnGeometry = true;
@@ -208,6 +222,7 @@
             queryFeat().then(updateMap);
             break;
           case "Gravel/Rock":
+            resultsLayer.title = "Gravel/Rock Trails";
             query.where = "TrailType = 'Gravel/Rock'";
             query.outFields = ["TrailName", "TrailType", "Notes"];
             query.returnGeometry = true;
@@ -215,6 +230,7 @@
             queryFeat().then(updateMap);
             break
           case "Other":
+            resultsLayer.title = "Other Trail Types";
             query.where = "TrailType = 'Other'";
             query.outFields = ["TrailName", "TrailType", "Notes"];
             query.returnGeometry = true;
