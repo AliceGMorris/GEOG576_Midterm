@@ -45,14 +45,15 @@
     Renderer
     ) {
       //ApiKey and set up map
-      esriConfig.apiKey = "AAPK14ceecbe50e741a8abf64505c88e0ae2hbmy5FKYTlNO8r9NgEY1n0spf5bQg4X-Ws2mCUoXrQMECei8f3MgQr4g6cglMzjO";
+      esriConfig.apiKey = "AAPKe25646307673446889b5a9c8e433dbd9RUONhu0G0j2uuWyYnq7Ocn8NTpfkWTTsgyAcMmgDmQzorADXUER36WiN9p7mq3FU";
       const map = new Map({ 
         basemap: "arcgis-topographic" // Basemap layer service
       });
+
       const view = new MapView({
         map: map,
-        center: [-98.5795, 39.828175], // Longitude, latitude
-        zoom: 5, // Zoom level
+        center: [-103.693731,  43.969466], // Longitude, latitude - Black Hills North Dakota
+        zoom: 10, // Zoom level
         container: "viewDiv" // Div element
       });
       
